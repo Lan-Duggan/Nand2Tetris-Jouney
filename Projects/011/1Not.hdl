@@ -1,0 +1,9 @@
+// 俩个输入一样的Nand 就是 Not
+
+CHIP Not{
+    IN in;
+    OUT out;
+
+    PARTS:
+        Nand(a = in, b = in, out = out);
+}

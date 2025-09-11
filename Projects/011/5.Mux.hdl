@@ -1,0 +1,15 @@
+// 二路一选择器 Mux 的逻辑表达式可以转化为 布尔表达式
+
+CHIP Mux{
+    IN a, b, sel;
+    OUT out;
+
+    PARTS:
+        Not(in = sel, out = nsel);
+
+        And(a = a, b = nsel, out = outa);
+        And(a = b, b = sel, out = outb);
+
+        Or(a = outa, b = outb, out = out);
+
+}
