@@ -1,0 +1,10 @@
+    // 一位寄存器
+
+    CHIP Bit{
+        IN in, load;
+        OUT out;
+
+        PARTS:
+            Mux(a = oout, b = in, sel = load, out = tempout);
+            DFF(in = tempout, out = out, out = oout);
+    }
