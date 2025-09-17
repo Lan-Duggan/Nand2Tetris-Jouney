@@ -11,7 +11,7 @@ D;JEQ
 @R2
 D = M
 
-@R0
+@R5
 D = D + M
 
 @R1

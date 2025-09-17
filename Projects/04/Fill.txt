@@ -1,0 +1,13 @@
+// 此文件用于 fill.asm 的介绍
+
+fill.asm实现： 若按下键盘，屏幕变黑，否则变白。
+
+伪代码如下：
+    while True:
+        if keyboard ！= 0 ：
+            fill screen with black
+        else:
+            clear screen
+
+
+改进之处：源代码未实现实时响应，需等屏幕完全填充或清除后，再次接受键盘相应
