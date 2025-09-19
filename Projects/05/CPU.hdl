@@ -1,0 +1,70 @@
+// PC逻辑处理部分，由于Mux8Way16输入是 16位信号， 而 zr,ng 等信号为1位， 无法正常运行。
+
+CHIP CPU{
+    IN instruction[16], 
+       inM[16],
+       reset;
+
+    OUT outM[16].
+        writeM,
+        addressM[15],
+        PC[15];
+
+    PARTS:
+        //指令类型判断
+        Not(in = instruction[15], out = isAInstruction)
+
+        //A寄存器
+        Mux16(a = aluOut, b = instruction, sel = isAInstruction, out = aIn);
+        Register(in = aluOut, load = loadA, out = aReg, out =addressM);
+
+        // D寄存器
+        Register(in = aluOut, load = loadD, out = dReg);
+
+        // 判断 ALU Y端口的输入源
+        Mux16(a = aReg, b = inM, sel = instruction[13], out = aluY);
+        
+        //ALU执行计算
+        ALU(x = dReg, Y =aluY,
+            zx = instruction[11], nx = instruction[10],
+            zy = instruction[9], ny = instruction[8],
+            f = instruction[7], no =instruction[6],
+            out = aluOut, out = outM, zr = zr, ng = ng ); 
+
+        //控制信号
+        And(a = instruction[15], b = instruction[5], out = loadAFromC);
+        Or(a = isAInstruction, b = loadAFromC, out = loadA);
+
+        And(a = instruction[15], b = instruction[4], out = loadD);
+        And(a = instruction[15], b = instruction[3], out = writeM);
+
+        //PC计数器
+        PC(in = aReg, load = shouldJump, inc = true, reset = reset, out = pc);
+        
+        //跳转逻辑判断;;;
+
+        Not(in = zr, out = notZr);
+        Not(in = ng, out = notNg);
+
+        And(a = notZr, b = notNg, out = isJGT);
+        Or(a = zr, b = ng, out = isJLE);
+
+        //是否为跳转指令
+        Or(a = instruction[0], b = instruction[1], out = isJump);
+        Or(a = isJump, b = instruction[3], out =isJump);
+
+        //判断跳转指令条件是否成立
+        Mux8Way16(a = false,
+                  b =  isJGT,
+                  c = zr,
+                  d = notNg,
+                  e = ng,
+                  f = notZr,
+                  g = isJLE,
+                  h = true
+                  sel = instruction[0..2],
+                  out = jumpCondition);
+
+        And(a = isJump, b = jumpCondition, c = shouldJump);
+
+}
