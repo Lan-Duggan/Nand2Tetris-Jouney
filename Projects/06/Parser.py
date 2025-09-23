@@ -71,3 +71,38 @@ class Parser:
         if ';' in self.current_command:
             return self.current_command.split(';')[1].strip()
         return ''           
+    
+    def close(self):
+        if self.shouldclose:
+            self.file.close()
+
+
+
+# 使用Parser解析汇编代码
+def parse_assembly_file(filename):
+    parser = Parser(filename)
+    
+    try:
+        while parser.has_more_lines():
+            parser.advance()
+            cmd_type = parser.instruction_type()
+            
+            print(f"INSTRUCTION: {parser.current_command}")
+            print(f"Type: {cmd_type}")
+            
+            if cmd_type in ['A_INSTRUCTION', 'L_INSTRUCIOTN']:
+                symbol = parser.symbol()
+                print(f"Symbol: {symbol}")
+            elif cmd_type == 'C_INSTRUCTION':
+                dest = parser.dest()
+                comp = parser.comp()
+                jump = parser.jump()
+                print(f"Dest: {dest}, Comp: {comp}, Jump: {jump}")
+            
+            print("---")
+    finally:
+        parser.close()
+
+# 测试
+if __name__ == "__main__":
+    parse_assembly_file("test.asm")
