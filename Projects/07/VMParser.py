@@ -1,0 +1,35 @@
+import sys
+import os
+
+class VMParser:
+    def __init__(self, vm_file):
+        self.vm_file = open(vm_file, 'r')
+        self.current_command= None
+        self.eof = False
+
+    def has_more_commands(self):
+        """检查是否还有更多命令"""
+        while True:
+            line = self.vm_file.readline()
+            if not line:
+                self.eof = True
+                return False
+            
+            # 清理行：移除注释和空白
+            clean_line = line.split('//')[0].strip()
+            if clean_line:
+                self.current_command = clean_line
+                return True
+    
+    def advance(self):
+        return self.current_command
+    
+    def cmd_type(self):
+        if self.current_command.startswith('push'):
+            return 'C_PUSH'
+        elif self.current_command.startswith('pop'):
+            return 'C_POP'
+        else:
+            return 'C_ARITHMETIC'
+        
+    
