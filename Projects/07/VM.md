@@ -7,8 +7,8 @@
 虚拟机中间代码：
    1.算术逻辑 add
 
-   2.内存访问 push segement index
-
+   2.内存访问 push segement index 
+    如：push local 2
 
    代码例子：
     //x + 7
@@ -49,4 +49,4 @@ M=M+1     // 10. SP加1，指向结果上方
 3. M = M - 1
 代码中 M 指向的是 RAM[0] ，即SP中存储的值。此代码的作用是 RAM[0] = RAM[0]- 1,即SP--。
 
- 
+ Q2: 静态段

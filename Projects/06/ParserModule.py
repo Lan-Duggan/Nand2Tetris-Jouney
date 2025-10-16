@@ -13,7 +13,7 @@ class Parser:
         self.current_line = None
         self.current_command = None
     
-    def has_more_lines(self):
+    def have_more_lines(self):
         "判断文件当前行是否还有内容"
         while True:
             line  = self.file.readline()

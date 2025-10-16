@@ -3,6 +3,9 @@ class VNCodeWriter:
         self.output_file = open(output_file, 'w')
         self.label_counter = 0
 
+    def set_file_name(self, file_name):
+        "设置当前文件名（用于静态变量）"
+        self.current_file = file_name
 
     def write_arithmetic(self, command):
         asm_code = []
@@ -90,3 +93,121 @@ class VNCodeWriter:
 
         for line in asm_code:
             self.output_file.write(line + '\n')
+
+    def write_push_pop(self, command, segment, index):
+        if command == 'C_PUSH':
+            self._write_push(segment, index)
+        elif command == 'C_POP':
+            self._write_pop(segment, index)
+
+    def _write_push(self, segment, index):
+        asm_code = []
+
+        # 获取要压栈的值存入D寄存器
+        if segment in ['local', 'argument', 'this', 'that']:
+            segment_map = {'local':'LCL', 'argument':'ARG', 'this':'THIS', 'that':'THAT'}
+            seg_sybmol = segment_map[segment]
+            asm_code.extend([
+                f'@{index}',
+                'D = A',
+                f'@{seg_sybmol}',
+                'A = D + M',
+                'D = M', # D = RAM(base + i)
+            ])
+        elif segment == 'pointer':
+            seg_sybmol = 'THIS' if index == 0 else 'THAT'
+            asm_code.extend([
+                f'@{seg_sybmol}',
+                'D = M',
+            ])
+        elif segment == 'temp':
+            asm_code.extend([
+                f'@{5 + index}',
+                'D = M'
+            ])
+        elif segment == 'constant':
+            asm_code.extend([
+                f'@{index}',
+                'D = M'
+            ])
+        elif segment == 'static':
+            asm_code.extend([
+                f'@{self.current_file}{index}',
+                'D = M'
+            ])
+        
+        # 压栈操作
+        asm_code.extend([
+            '@SP',
+            'A = M',
+            'M = D',
+            '@SP',
+            'M = M + 1'
+        ])
+
+
+        for line in asm_code:
+            self.output_file.write(line + '\n')
+
+    def _write_pop(self, segment, index):
+        asm_code = []
+        
+        if segment == 'constant':
+            raise ValueError("不能pop到constant段")
+        
+        elif segment in ['local', 'argument', 'this', 'that']:
+            seg_map = {'local': 'LCL', 'argument': 'ARG', 'this': 'THIS', 'that': 'THAT'}
+            seg_symbol = seg_map[segment]
+            
+            asm_code.extend([
+                f'@{index}',
+                'D=A',
+                f'@{seg_symbol}',
+                'D=D+M',
+                '@R13',  # 使用R13存储目标地址
+                'M=D',
+                '@SP',
+                'M=M-1',
+                'A=M',
+                'D=M',
+                '@R13',
+                'A=M',
+                'M=D'
+            ])
+        
+        elif segment == 'static':
+            asm_code.extend([
+                '@SP',
+                'M=M-1',
+                'A=M',
+                'D=M',
+                f'@{self.current_file}.{index}',
+                'M=D'
+            ])
+        
+        elif segment == 'temp':
+            asm_code.extend([
+                '@SP',
+                'M=M-1',
+                'A=M',
+                'D=M',
+                f'@{5 + index}',
+                'M=D'
+            ])
+        
+        elif segment == 'pointer':
+            seg_symbol = 'THIS' if index == 0 else 'THAT'
+            asm_code.extend([
+                '@SP',
+                'M=M-1',
+                'A=M',
+                'D=M',
+                f'@{seg_symbol}',
+                'M=D'
+            ])
+        
+        for line in asm_code:
+            self.output_file.write(line + '\n')       
+
+    def close(self):
+        self.output_file.close()

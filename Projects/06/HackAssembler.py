@@ -1,48 +1,107 @@
-"先实现一个不处理符号的汇编编译器"
+"完整汇编器的实现"
 
-from Code import Code 
-from Parser import Parser
+import sys
+from CodeModule import Code 
+from ParserModule import Parser
+from SymbolTable import SymbolTable
 
-class NoSymbolAssembler:
+class HackAssembler:
     def __init__(self):
-        self.Parser = None
-        self.Code = Code()
+        self.parser = None
+        self.code = Code()
+        self.symbol_table = SymbolTable() #创建符号表
+        self.next_variable_address = 16
 
-    def assemble(self, input_stream, output_file):
-        "实现汇编操作"
-        machine_codes = self._parse_and_translate(input_stream)
+
+    def assemble(self, input_file, output_file):
+        self._first_pass(input_file)
+        machine_codes = self._second_pass(input_file)
         self._write_output(output_file, machine_codes)
 
+    def _first_pass(self, input_file):
+        self.parser = Parser(input_file)
+        rom_address = 0 
 
-    def _parse_and_translate(self, input_stream):
-        "解析输入指令并翻译为机器码"
+        while self.parser.have_more_lines():
+            self.parser.advance()
+            cmd_type = self.parser.instruction_type()
+            if cmd_type == "L_INSTRUCTION":
+                symbol = self.parser.symbol()
+                self.symbol_table.add_entry(symbol, rom_address)
+            elif cmd_type in ["A_INSTRUCTION", "C_INSTRUCTION"]:
+                rom_address += 1
+
+        self.parser.close()
+
+    def _second_pass(self, input_file):
+        self.parser = Parser(input_file)
         machine_codes = []
-        self.Parser = Parser(input_stream)
 
-        while self.Parser.has_more_lines:
-            self.Parser.advance()
-            machine_code = self.translate_current_instruction()
-            machine_codes.append(machine_code)
+        while self.parser.have_more_lines():
+            self.parser.advance()
+            cmd_type  =self.parser.instruction_type()
 
-        return machine_codes
-
-    def _translate_current_instruction(self):
-        "将指令翻译成机器码"
-        cmd_type = self.Parser.instruction_type()  #判断指令类型
+            if cmd_type == "A_INSTRUCTION":
+                machine_code = self._translate_a_instruction()
+                machine_codes.append(machine_code)
+            elif cmd_type == "C_INSTRUCTION":
+                machine_code = self._translate_c_instruction()
+                machine_codes.append(machine_code)
+        self.parser.close()
+        return machine_codes       
+            
+    def _translate_a_instruction(self):
+        """翻译A指令为机器码"""
+        symbol = self.parser.symbol()
         
-        if cmd_type == "A_INSTRUCTION":
-            symbol = self.Parser.symbol()
+        if symbol.isdigit():
+            # 若@数字
             address = int(symbol)
-            return f'0{address:015b}'
+        else:
+            # 若@符号
+            if not self.symbol_table.contains(symbol):
+                self.symbol_table.add_entry(symbol, self.next_variable_address)
+                self.next_variable_address+= 1
+            address = self.symbol_table.get_address(symbol)
         
-        if cmd_type == "C_INSTRUCTION":
-            dest = self.Parser.dest()
-            comp = self.Parser.comp()
-            jump = self.Parser.jump()
-            return f'111{dest}{comp}{jump}'
+        return f"0{address:015b}"  
+
+    def _translate_c_instruction(self):
+        """翻译C指令为机器码"""
+        # 获取指令各部分
+        dest = self.parser.dest()
+        comp = self.parser.comp()
+        jump = self.parser.jump()
+        
+        # 转换为二进制
+        dest_bin = self.code.dest(dest)
+        comp_bin = self.code.comp(comp)
+        jump_bin = self.code.jump(jump)
+        
+        return f"111{comp_bin}{dest_bin}{jump_bin}"
+
 
     def _write_output(self, output_file, machine_codes):
-        "输出机器码文件"
+        """将机器码写入输出文件"""
         with open(output_file, 'w') as f:
             for code in machine_codes:
                 f.write(code + '\n')
+
+
+    def run(self,input_file):
+        output_file = input_file.replace('.asm', '.hack')
+        self.assemble(input_file, output_file)
+        return 
+    
+
+
+def main():
+    """主函数：命令行接口"""
+    input_file = sys.argv[1]
+    assembler = HackAssembler()
+    success = assembler.run(input_file)
+    sys.exit(0 if success else 1)
+
+
+if __name__ == '__main__':
+    main()
