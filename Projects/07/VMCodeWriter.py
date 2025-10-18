@@ -1,4 +1,4 @@
-class VNCodeWriter:
+class VMCodeWriter:
     def __init__(self, output_file):
         self.output_file = open(output_file, 'w')
         self.label_counter = 0

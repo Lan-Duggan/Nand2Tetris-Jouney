@@ -1,6 +1,3 @@
-import sys
-import os
-
 class VMParser:
     def __init__(self, vm_file):
         self.vm_file = open(vm_file, 'r')
@@ -31,5 +28,16 @@ class VMParser:
             return 'C_POP'
         else:
             return 'C_ARITHMETIC'
-        
     
+    def arg1(self):
+        if self.cmd_type == 'C_ARITHMETIC':
+            return self.current_command
+        elif self.cmd_type in ['C_PUSH', 'C_POP']:
+            return self.current_command.split()[1]
+        
+    def arg2(self):
+        if self.cmd_type in ['C_PUSH', 'C_POP']:
+            return int(self.current_command.split()[2])
+        
+    def close(self):
+        self.vm_file.close()
