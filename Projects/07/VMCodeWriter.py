@@ -2,6 +2,8 @@ class VMCodeWriter:
     def __init__(self, output_file):
         self.output_file = open(output_file, 'w')
         self.label_counter = 0
+        self.return_counter = 0
+        self.current_function = ''
 
     def set_file_name(self, file_name):
         "设置当前文件名（用于静态变量）"
@@ -208,6 +210,160 @@ class VMCodeWriter:
         
         for line in asm_code:
             self.output_file.write(line + '\n')       
+            
+    def _write_lines(self, lines):
+        for line in lines:
+            self.output_file.write(line + '\n')
+
+    def write_label(self, label):
+        full_label = f'{self.current_function}${label}' if self.current_function else label
+        self._write_lines([f'({full_label})'])
+
+    def write_goto(self, label):
+        full_label = f'{self.current_function}${full_label}' if self.current_function else label
+        self._write_lines([
+            f'@{full_label}',
+            '0;JMP'
+        ])
+    
+    def write_if(self, label):
+        full_label = f'{self.current_function}${label}' if self.current_function else label
+        self._write_lines([
+            '@SP',
+            'M = M - 1',
+            'A = M',
+            'D = M',
+            f'@{full_label}',
+            'D;JNE'
+        ])
+
+    def write_call(self, function_name, n_args):
+        return_label = f'RETURN_{self.return_counter}'
+        self.return_counter += 1
+
+        # 保存返回地址
+        self._write_lines([
+            f'@{return_label}',
+            'D = A',
+            '@SP',
+            'A = M',
+            'M = D',
+            '@SP',
+            'M = M + 1'
+        ])
+
+        # 保存原指针状态
+        for segment in ['LCL', 'ARG', 'THIS', 'THAT']:
+            self._write_lines([
+                f'@{segment}',
+                'D = A',
+                '@SP',
+                'A = M',
+                'M = D',
+                '@SP',
+                'M = M +1'
+            ])
+        
+        # 修改现指针状态
+        # 设置新ARG指针
+        self._write_lines([
+            '@SP',
+            'D = M',
+            '@5',
+            'D = D - A',
+            'f@{n_args}',
+            'D = D - A',
+            '@ARG',
+            'M = D'
+        ])
+
+        #设置新LCL指针
+        self._write_lines([
+            '@SP',
+            'D = A',
+            '@LCL',
+            'M = D'
+        ])
+
+        # 跳转到函数
+        self._write_lines([
+            f'@{function_name}',
+            '0;JMP',
+            f'({return_label})'
+        ])
+
+
+    def write_function(self, function_name, n_vars):
+        self.current_function = function_name
+        self._write_lines([f'{function_name}'])
+        
+        for i in range(n_vars):
+            self._write_lines([
+                '@0',
+                'D = A',
+                '@SP',
+                'A = M',
+                'M = D',
+                'SP',
+                'M = M + 1'
+            ])
+
+    def write_return(self):
+        # 保存返回地址到临时变量
+        self._write_lines([
+            '@LCL',
+            'D = M', # Not D = A, @LCL是获取指向LCL寄存器的地址， LCL寄存器存储着local内存单元的起始位置
+            '@5',
+            'A = D - A',
+            'D = M',
+            '@R13',
+            'M = D'
+        ])
+        
+        # 将返回值保存到ARG[0]
+        self._write_lines([
+            '@SP',
+            'A = M-1',
+            'D = M',
+            '@ARG',
+            'A = M',
+            'M = D'
+        ])
+
+        # 恢复指针SP
+        self._write_lines([
+            '@ARG',
+            'D = M+1',
+            '@SP',
+            'M = D'
+        ])
+        
+        # 恢复其他指针
+        segments = ['TAHT', 'THIS', 'ARG', 'LCL']
+        for i , segment in enumerate(segments):
+            offset = i + 1
+            self._write_lines([
+                '@LCL',
+                'D = M',
+                f'@{offset}',
+                'A = D - A',
+                'D = M',
+                f'@{segment}',
+                'M = D'
+            ])
+        
+        # 跳转到返回地址
+        self._write_lines([
+            '@R13',
+            'A = M',
+            '0;JMP'
+        ])
+
+
 
     def close(self):
         self.output_file.close()
+        
+
+
+

@@ -1,39 +1,13 @@
-@3030
+@0
 D = M
 @SP
 A = M
 M = D
 @SP
 M = M + 1
-@SP
-M=M-1
-A=M
-D=M
-@THIS
-M=D
-@3040
-D = M
-@SP
-A = M
-M = D
-@SP
-M = M + 1
-@SP
-M=M-1
-A=M
-D=M
-@THAT
-M=D
-@32
-D = M
-@SP
-A = M
-M = D
-@SP
-M = M + 1
-@2
+@0
 D=A
-@THIS
+@LCL
 D=D+M
 @R13
 M=D
@@ -44,34 +18,21 @@ D=M
 @R13
 A=M
 M=D
-@46
+(LOOP)
+@0
+D = A
+@ARG
+A = D + M
 D = M
 @SP
 A = M
 M = D
 @SP
 M = M + 1
-@6
-D=A
-@THAT
-D=D+M
-@R13
-M=D
-@SP
-M=M-1
-A=M
-D=M
-@R13
-A=M
-M=D
-@THIS
-D = M
-@SP
-A = M
-M = D
-@SP
-M = M + 1
-@THAT
+@0
+D = A
+@LCL
+A = D + M
 D = M
 @SP
 A = M
@@ -88,10 +49,30 @@ A = M
 A + M
 @SP
 M = M + 1
-@2
+@0
+D=A
+@LCL
+D=D+M
+@R13
+M=D
+@SP
+M=M-1
+A=M
+D=M
+@R13
+A=M
+M=D
+@0
 D = A
-@THIS
+@ARG
 A = D + M
+D = M
+@SP
+A = M
+M = D
+@SP
+M = M + 1
+@1
 D = M
 @SP
 A = M
@@ -108,9 +89,22 @@ A = M
 A - M
 @SP
 M = M + 1
-@6
+@0
+D=A
+@ARG
+D=D+M
+@R13
+M=D
+@SP
+M=M-1
+A=M
+D=M
+@R13
+A=M
+M=D
+@0
 D = A
-@THAT
+@ARG
 A = D + M
 D = M
 @SP
@@ -122,9 +116,15 @@ M = M + 1
 M = M - 1
 A = M
 D = M
+@LOOP
+D;JNE
+@0
+D = A
+@LCL
+A = D + M
+D = M
 @SP
-M  = M - 1
 A = M
-A + M
+M = D
 @SP
 M = M + 1

@@ -1,0 +1,19 @@
+// 阶乘函数
+function Math.factorial 1
+push argument 0
+push constant 1
+eq
+if-goto BASE_CASE
+
+// 递归调用
+push argument 0
+push constant 1
+sub
+call Math.factorial 1
+push argument 0
+mult
+return
+
+label BASE_CASE
+push constant 1
+return
